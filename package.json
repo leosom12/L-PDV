@@ -1,6 +1,6 @@
 {
     "name": "supermarket-pos",
-    "version": "2.0.3",
+    "version": "2.0.4",
     "description": "Sistema PDV para Supermercado com PWA",
     "main": "server.js",
     "scripts": {
