@@ -1,4 +1,10 @@
 const express = require('express');
+process.on('uncaughtException', (err) => {
+    console.error('UNCAUGHT EXCEPTION:', err);
+});
+process.on('unhandledRejection', (reason, promise) => {
+    console.error('UNHANDLED REJECTION:', reason);
+});
 const sqlite3 = require('sqlite3').verbose();
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
@@ -362,18 +368,43 @@ app.post('/api/debtors', authenticateToken, (req, res) => {
 
                 const debtorId = this.lastID;
 
+                // Update global index
                 mainDb.run(`INSERT OR REPLACE INTO debtors_index(email, storeUserId) VALUES(?, ?)`,
                     [email, req.user.id],
                     (err) => {
                         if (err) console.error('Error updating debtors index:', err);
+                        res.json({ id: debtorId, message: 'Devedor criado' });
+                        db.close();
                     }
                 );
-
-                res.json({ id: debtorId });
-                db.close();
             }
         );
     });
+});
+
+app.put('/api/debtors/:id', authenticateToken, (req, res) => {
+    const { name, email, cpf, phone, cardInfo } = req.body;
+    const db = getUserDb(req.user.id);
+
+    db.run(`UPDATE debtors SET name=?, email=?, cpf=?, phone=?, cardInfo=? WHERE id=?`,
+        [name, email, cpf, phone, cardInfo, req.params.id],
+        function (err) {
+            if (err) {
+                db.close();
+                return res.status(500).json({ error: err.message });
+            }
+
+            // Update global index
+            mainDb.run(`INSERT OR REPLACE INTO debtors_index(email, storeUserId) VALUES(?, ?)`,
+                [email, req.user.id],
+                (err) => {
+                    if (err) console.error('Error updating debtors index:', err);
+                    res.json({ message: 'Devedor atualizado' });
+                    db.close();
+                }
+            );
+        }
+    );
 });
 
 // ==================== BOLETOS ROUTES ====================
@@ -553,7 +584,36 @@ app.put('/api/admin/users/:id/subscription', authenticateToken, (req, res) => {
     const { subscriptionStatus } = req.body;
 
     mainDb.run(`UPDATE users SET subscriptionStatus = ? WHERE id = ?`, [subscriptionStatus, req.params.id], function (err) {
+        if (err) return res.status(500).json({ error: err.message });
         res.json({ message: 'Updated' });
+    });
+});
+
+// ==================== DEBTORS ROUTES (PAYMENT) ====================
+app.post('/api/debtors/:id/pay', authenticateToken, (req, res) => {
+    const { amount } = req.body;
+    const db = getUserDb(req.user.id);
+
+    db.get(`SELECT * FROM debtors WHERE id = ?`, [req.params.id], (err, debtor) => {
+        if (err || !debtor) {
+            db.close();
+            return res.status(404).json({ error: 'Devedor não encontrado' });
+        }
+
+        const newDebt = debtor.debtAmount - amount;
+        if (newDebt < 0) {
+            db.close();
+            return res.status(400).json({ error: 'Valor maior que a dívida' });
+        }
+
+        db.run(`UPDATE debtors SET debtAmount = ? WHERE id = ?`, [newDebt, req.params.id], function (err) {
+            if (err) {
+                db.close();
+                return res.status(500).json({ error: err.message });
+            }
+            res.json({ message: 'Pagamento registrado', newDebt });
+            db.close();
+        });
     });
 });
 

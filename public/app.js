@@ -141,10 +141,169 @@ function switchTab(tabName) {
     const contentTab = document.getElementById(`${tabName}-tab`);
     if (contentTab) contentTab.classList.add('active');
 
+    // Load data for specific tabs
     if (tabName === 'dashboard') loadDashboard();
     if (tabName === 'products') loadProducts();
     if (tabName === 'sales') loadSales();
+    if (tabName === 'debtors') loadDebtors();
+    if (tabName === 'reports') loadReports();
+    if (tabName === 'financial') loadFinancial();
+    if (tabName === 'accounting') loadAccounting();
+    if (tabName === 'subscription') loadSubscription();
+    if (tabName === 'boletos') loadBoletos();
+    if (tabName === 'estoque') {
+        loadStockMovements();
+        loadStockSummary();
+    }
 }
+
+// ==================== DEVEDORES ====================
+function loadDebtors() {
+    const token = localStorage.getItem('authToken');
+
+    fetch('/api/debtors', {
+        headers: { 'Authorization': `Bearer ${token}` }
+    })
+        .then(response => response.json())
+        .then(debtors => {
+            const tbody = document.getElementById('debtors-table-body');
+            tbody.innerHTML = '';
+
+            debtors.forEach(debtor => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>${debtor.name}</td>
+                    <td>${debtor.cpf || '-'}</td>
+                    <td>${debtor.phone || '-'}</td>
+                    <td style="color: ${debtor.debtAmount > 0 ? 'var(--danger)' : 'var(--success)'}; font-weight: bold;">
+                        ${formatCurrency(debtor.debtAmount)}
+                    </td>
+                    <td>
+                        <button onclick="openDebtorModal(${debtor.id})" class="btn-icon">✏️</button>
+                        <button onclick="openPayDebtModal(${debtor.id}, '${debtor.name}', ${debtor.debtAmount})" class="btn-icon" title="Pagar Dívida">💰</button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        })
+        .catch(error => console.error('Erro ao carregar devedores:', error));
+}
+
+function openDebtorModal(debtorId = null) {
+    const modal = document.getElementById('debtor-modal');
+    const title = document.getElementById('debtor-modal-title');
+    const form = document.getElementById('debtor-form');
+
+    if (debtorId) {
+        title.textContent = 'Editar Devedor';
+        // Carregar dados (simulado, ideal seria fetch individual ou pegar da lista)
+        // Por simplificação, vamos buscar da lista já carregada se possível ou fazer fetch
+        // Vamos fazer fetch para garantir
+        const token = localStorage.getItem('authToken');
+        fetch('/api/debtors', { headers: { 'Authorization': `Bearer ${token}` } })
+            .then(r => r.json())
+            .then(debtors => {
+                const debtor = debtors.find(d => d.id === debtorId);
+                if (debtor) {
+                    document.getElementById('debtor-id').value = debtor.id;
+                    document.getElementById('debtor-name').value = debtor.name;
+                    document.getElementById('debtor-email').value = debtor.email;
+                    document.getElementById('debtor-cpf').value = debtor.cpf;
+                    document.getElementById('debtor-phone').value = debtor.phone;
+                }
+            });
+    } else {
+        title.textContent = 'Novo Devedor';
+        form.reset();
+        document.getElementById('debtor-id').value = '';
+    }
+    modal.style.display = 'flex';
+}
+
+function closeDebtorModal() {
+    document.getElementById('debtor-modal').style.display = 'none';
+}
+
+document.getElementById('debtor-form')?.addEventListener('submit', function (e) {
+    e.preventDefault();
+    const id = document.getElementById('debtor-id').value;
+    const data = {
+        name: document.getElementById('debtor-name').value,
+        email: document.getElementById('debtor-email').value,
+        cpf: document.getElementById('debtor-cpf').value,
+        phone: document.getElementById('debtor-phone').value,
+        cardInfo: '' // Simplificado
+    };
+
+    const token = localStorage.getItem('authToken');
+    const url = id ? `/api/debtors/${id}` : '/api/debtors';
+    const method = id ? 'PUT' : 'POST';
+
+    fetch(url, {
+        method: method,
+        headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(data)
+    })
+        .then(res => res.json())
+        .then(data => {
+            if (data.id || data.message) {
+                alert(id ? 'Devedor atualizado!' : 'Devedor salvo!');
+                closeDebtorModal();
+                loadDebtors();
+            } else {
+                alert('Erro ao salvar: ' + (data.error || 'Desconhecido'));
+            }
+        })
+        .catch(err => {
+            console.error('Erro:', err);
+            alert('Erro ao salvar devedor');
+        });
+});
+
+function openPayDebtModal(id, name, currentDebt) {
+    if (currentDebt <= 0) {
+        alert('Este cliente não possui dívidas.');
+        return;
+    }
+    document.getElementById('pay-debt-id').value = id;
+    document.getElementById('pay-debt-customer-name').textContent = `${name} - Dívida: ${formatCurrency(currentDebt)}`;
+    document.getElementById('pay-debt-amount').max = currentDebt;
+    document.getElementById('pay-debt-amount').value = '';
+    document.getElementById('pay-debt-modal').style.display = 'flex';
+}
+
+function closePayDebtModal() {
+    document.getElementById('pay-debt-modal').style.display = 'none';
+}
+
+document.getElementById('pay-debt-form')?.addEventListener('submit', function (e) {
+    e.preventDefault();
+    const id = document.getElementById('pay-debt-id').value;
+    const amount = parseFloat(document.getElementById('pay-debt-amount').value);
+
+    const token = localStorage.getItem('authToken');
+    fetch(`/api/debtors/${id}/pay`, {
+        method: 'POST',
+        headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ amount })
+    })
+        .then(res => res.json())
+        .then(data => {
+            if (data.message) {
+                alert('Pagamento registrado!');
+                closePayDebtModal();
+                loadDebtors();
+            } else {
+                alert('Erro: ' + data.error);
+            }
+        });
+});
 
 // ==================== LOGOUT ====================
 function logout() {
@@ -579,37 +738,7 @@ function loadSales() {
     fetch('/api/sales', {
         headers: { 'Authorization': `Bearer ${token}` }
     })
-    // Verificar estoque
-    if (product.stock <= 0) {
-        alert('❌ PRODUTO SEM ESTOQUE! Venda bloqueada.');
-        return;
-    }
-
-    if (product.stock <= 5) {
-        alert(`⚠️ ALERTA DE ESTOQUE BAIXO!\nRestam apenas ${product.stock} unidades.`);
-    }
-
-    const existingItem = cart.find(item => item.id === product.id);
-
-    if (existingItem) {
-        if (existingItem.quantity < product.stock) {
-            existingItem.quantity++;
-        } else {
-            alert('⚠️ Estoque insuficiente!');
-            return;
-        }
-    } else {
-        cart.push({
-            id: product.id,
-            name: product.name,
-            price: product.price,
-            icon: product.icon,
-            quantity: 1,
-            maxStock: product.stock
-        });
-    }
-
-    updateCartDisplay();
+        .catch(error => console.error('Erro ao carregar vendas:', error));
 }
 
 function updateCartDisplay() {
@@ -840,8 +969,184 @@ function loadDebtors() {
 
 // ==================== RELATÓRIOS ====================
 function loadReports() {
-    console.log('Relatórios em desenvolvimento');
+    const token = localStorage.getItem('authToken');
+
+    // Fetch sales data for reports
+    fetch('/api/sales', {
+        headers: { 'Authorization': `Bearer ${token}` }
+    })
+        .then(response => response.json())
+        .then(sales => {
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+
+            const thisMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+
+            // Calculate today's sales
+            const salesToday = sales.filter(sale => {
+                const saleDate = new Date(sale.createdAt);
+                saleDate.setHours(0, 0, 0, 0);
+                return saleDate.getTime() === today.getTime();
+            });
+
+            const totalToday = salesToday.reduce((sum, sale) => sum + sale.total, 0);
+
+            // Calculate this month's sales
+            const salesThisMonth = sales.filter(sale => {
+                const saleDate = new Date(sale.createdAt);
+                return saleDate >= thisMonth;
+            });
+
+            const totalMonth = salesThisMonth.reduce((sum, sale) => sum + sale.total, 0);
+
+            // Update UI
+            const todayEl = document.getElementById('report-sales-today');
+            const monthEl = document.getElementById('report-sales-month');
+
+            if (todayEl) todayEl.textContent = formatCurrency(totalToday);
+            if (monthEl) monthEl.textContent = formatCurrency(totalMonth);
+        })
+        .catch(error => console.error('Erro ao carregar relatórios:', error));
 }
+
+// ==================== FINANCEIRO ====================
+function loadFinancial() {
+    const token = localStorage.getItem('authToken');
+
+    // Calculate income from sales
+    fetch('/api/sales', {
+        headers: { 'Authorization': `Bearer ${token}` }
+    })
+        .then(response => response.json())
+        .then(sales => {
+            const totalIncome = sales.reduce((sum, sale) => sum + sale.total, 0);
+
+            const incomeEl = document.getElementById('fin-income');
+            if (incomeEl) incomeEl.textContent = formatCurrency(totalIncome);
+        });
+
+    // Calculate expenses from boletos
+    fetch('/api/boletos', {
+        headers: { 'Authorization': `Bearer ${token}` }
+    })
+        .then(response => response.json())
+        .then(boletos => {
+            const totalExpenses = boletos
+                .filter(b => b.status === 'pago')
+                .reduce((sum, b) => sum + parseFloat(b.value), 0);
+
+            const expensesEl = document.getElementById('fin-expenses');
+            if (expensesEl) expensesEl.textContent = formatCurrency(totalExpenses);
+
+            // Calculate balance
+            const incomeText = document.getElementById('fin-income')?.textContent || 'R$ 0,00';
+            const income = parseFloat(incomeText.replace('R$', '').replace(/\./g, '').replace(',', '.'));
+            const balance = income - totalExpenses;
+
+            const balanceEl = document.getElementById('fin-balance');
+            if (balanceEl) {
+                balanceEl.textContent = formatCurrency(balance);
+                balanceEl.style.color = balance >= 0 ? 'var(--success)' : 'var(--danger)';
+            }
+        })
+        .catch(error => console.error('Erro ao carregar financeiro:', error));
+}
+
+// ==================== CONTABILIDADE ====================
+function loadAccounting() {
+    const token = localStorage.getItem('authToken');
+    const tbody = document.getElementById('accounting-table-body');
+    if (!tbody) return;
+
+    // Fetch all transactions (sales and boletos)
+    Promise.all([
+        fetch('/api/sales', { headers: { 'Authorization': `Bearer ${token}` } }).then(r => r.json()),
+        fetch('/api/boletos', { headers: { 'Authorization': `Bearer ${token}` } }).then(r => r.json())
+    ])
+        .then(([sales, boletos]) => {
+            const transactions = [];
+
+            // Add sales as income
+            sales.forEach(sale => {
+                transactions.push({
+                    date: new Date(sale.createdAt),
+                    description: `Venda #${sale.id}`,
+                    type: 'Receita',
+                    value: sale.total
+                });
+            });
+
+            // Add paid boletos as expenses
+            boletos.filter(b => b.status === 'pago').forEach(boleto => {
+                transactions.push({
+                    date: new Date(boleto.createdAt || boleto.dueDate),
+                    description: boleto.description,
+                    type: 'Despesa',
+                    value: parseFloat(boleto.value)
+                });
+            });
+
+            // Sort by date (newest first)
+            transactions.sort((a, b) => b.date - a.date);
+
+            tbody.innerHTML = '';
+
+            if (transactions.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="4" style="text-align: center; color: var(--text-secondary);">Nenhuma transação registrada</td></tr>';
+                return;
+            }
+
+            transactions.forEach(trans => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>${trans.date.toLocaleDateString('pt-BR')}</td>
+                    <td>${trans.description}</td>
+                    <td><span class="status-badge ${trans.type === 'Receita' ? 'active' : 'inactive'}">${trans.type}</span></td>
+                    <td style="color: ${trans.type === 'Receita' ? 'var(--success)' : 'var(--danger)'}; font-weight: bold;">
+                        ${trans.type === 'Receita' ? '+' : '-'} ${formatCurrency(trans.value)}
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        })
+        .catch(error => console.error('Erro ao carregar contabilidade:', error));
+}
+
+// ==================== ASSINATURA ====================
+function loadSubscription() {
+    const userData = localStorage.getItem('userData');
+    if (!userData) return;
+
+    const user = JSON.parse(userData);
+
+    const statusEl = document.getElementById('sub-status');
+    const expiresEl = document.getElementById('sub-expires');
+
+    if (statusEl) {
+        const statusMap = {
+            'active': 'Ativo ✓',
+            'pending': 'Pendente',
+            'verification': 'Em Análise',
+            'expired': 'Expirado'
+        };
+        statusEl.textContent = statusMap[user.subscriptionStatus] || 'Desconhecido';
+        statusEl.style.color = user.subscriptionStatus === 'active' ? 'var(--success)' : 'var(--warning)';
+    }
+
+    if (expiresEl) {
+        if (user.subscriptionExpiresAt) {
+            const expiryDate = new Date(user.subscriptionExpiresAt);
+            expiresEl.textContent = `Expira em: ${expiryDate.toLocaleDateString('pt-BR')}`;
+        } else {
+            expiresEl.textContent = 'Data de expiração não definida';
+        }
+    }
+}
+
+function renewSubscription() {
+    alert('🔄 Funcionalidade de renovação em desenvolvimento.\n\nEm breve você poderá renovar sua assinatura via PIX.');
+}
+
 
 
 
