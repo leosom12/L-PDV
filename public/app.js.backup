@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#1e293b">
+    <meta name="description" content="Sistema PDV para Supermercado">
+    <title>L-PDV - Sistema de Ponto de Venda</title>
+
+    <!-- PWA -->
+    <link rel="manifest" href="/manifest.json">
+    <link rel="icon" type="image/png" href="/icon-192.png">
+    <link rel="apple-touch-icon" href="/icon-512.png">
+
+    <link rel="stylesheet" href="/styles.css">
+</head>
+
+<body>
+    <!-- Tela de Login/Registro -->
+    <div id="auth-screen" class="screen">
+        <div class="auth-container">
+            <div class="auth-header">
+                <h1>🛒 L-PDV</h1>
+                <p>Sistema de Ponto de Venda</p>
+            </div>
+
+            <!-- Formulário de Login -->
+            <div id="login-form" class="auth-form">
+                <h2>Entrar</h2>
+                <form onsubmit="login(event)">
+                    <div class="form-group">
+                        <label>📧 Email</label>
+                        <input type="email" id="login-email" required placeholder="seu@email.com">
+                    </div>
+                    <div class="form-group">
+                        <label>🔑 Senha</label>
+                        <input type="password" id="login-password" required placeholder="••••••••">
+                    </div>
+                    <button type="submit" class="btn-primary">Entrar</button>
+                </form>
+                <p class="auth-switch">
+                    Não tem conta? <a href="#" onclick="showRegister(); return false;">Cadastre-se</a>
+                </p>
+            </div>
+
+            <!-- Formulário de Registro -->
+            <div id="register-form" class="auth-form" style="display: none;">
+                <h2>Criar Conta</h2>
+                <form onsubmit="register(event)">
+                    <div class="form-group">
+                        <label>👤 Nome Completo</label>
+                        <input type="text" id="register-name" required placeholder="Seu nome">
+                    </div>
+                    <div class="form-group">
+                        <label>📧 Email</label>
+                        <input type="email" id="register-email" required placeholder="seu@email.com">
+                    </div>
+                    <div class="form-group">
+                        <label>🔑 Senha</label>
+                        <input type="password" id="register-password" required placeholder="••••••••" minlength="6">
+                    </div>
+                    <button type="submit" class="btn-primary">Cadastrar</button>
+                </form>
+                <p class="auth-switch">
+                    Já tem conta? <a href="#" onclick="showLogin(); return false;">Fazer login</a>
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tela de Assinatura -->
+    <div id="subscription-screen" class="screen" style="display: none;">
+        <div class="auth-container" style="max-width: 500px;">
+            <div class="auth-header">
+                <h1>💎 Assinatura Premium</h1>
+                <p>Acesso completo ao sistema PDV</p>
+            </div>
+
+            <div class="subscription-info">
+                <div class="price-box">
+                    <h2>R$ 50,00</h2>
+                    <p>por mês</p>
+                </div>
+
+                <div class="features-list">
+                    <h3>✨ Recursos inclusos:</h3>
+                    <ul>
+                        <li>✓ Sistema PDV completo</li>
+                        <li>✓ Gestão de produtos ilimitada</li>
+                        <li>✓ Histórico de vendas</li>
+                        <!-- Aplicação Principal -->
+                        <div id="app-screen" class="screen" style="display: none;">
+                            <!-- Header -->
+                            <header class="app-header">
+                                <div class="header-left">
+                                    <h1>🛒 L-PDV</h1>
+                                </div>
+                                <div class="header-right">
+                                    <span id="user-info" class="user-name"></span>
+                                    <button id="logout-btn" class="btn-logout">Sair</button>
+                                </div>
+                            </header>
+
+                            <!-- Navigation -->
+                            <nav class="app-nav">
+                                <button class="nav-tab active" data-tab="dashboard">📊 Dashboard</button>
+                                <button class="nav-tab" data-tab="caixa">💰 Caixa</button>
+                                <button class="nav-tab" data-tab="products">📦 Produtos</button>
+                                <button class="nav-tab" data-tab="sales">📈 Vendas</button>
+                                <button id="admin-nav-tab" class="nav-tab" data-tab="admin" style="display: none;">⚙️
+                                    Admin</button>
+                            </nav>
+
+                            <!-- Content -->
+                            <main class="app-content">
+                                <!-- Dashboard Tab -->
+                                <div id="dashboard-tab" class="tab-content active">
+                                    <h2>📊 Dashboard</h2>
+                                    <div class="dashboard-grid">
+                                        <div class="dashboard-card">
+                                            <div class="card-icon">📦</div>
+                                            <div class="card-info">
+                                                <h3>Total de Produtos</h3>
+                                                <p id="total-products" class="card-value">0</p>
+                                            </div>
+                                        </div>
+                                        <div class="dashboard-card warning">
+                                            <div class="card-icon">⚠️</div>
+                                            <div class="card-info">
+                                                <h3>Estoque Baixo</h3>
+                                                <p id="low-stock-products" class="card-value">0</p>
+                                            </div>
+                                        </div>
+                                        <div class="dashboard-card danger">
+                                            <div class="card-icon">🚫</div>
+                                            <div class="card-info">
+                                                <h3>Sem Estoque</h3>
+                                                <p id="out-of-stock-products" class="card-value">0</p>
+                                            </div>
+                                        </div>
+                                        <div class="dashboard-card">
+                                            <div class="card-icon">📈</div>
+                                            <div class="card-info">
+                                                <h3>Total de Vendas</h3>
+                                                <p id="total-sales-count" class="card-value">0</p>
+                                            </div>
+                                        </div>
+                                        <div class="dashboard-card success">
+                                            <div class="card-icon">💵</div>
+                                            <div class="card-info">
+                                                <h3>Valor Total</h3>
+                                                <p id="total-sales-amount" class="card-value">R$ 0,00</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Caixa Tab -->
+                                <div id="caixa-tab" class="tab-content">
+                                    <h2>💰 Caixa - PDV</h2>
+                                    <div class="caixa-container">
+                                        <div class="caixa-left">
+                                            <div class="barcode-scanner">
+                                                <label>🔍 Código de Barras</label>
+                                                <input type="text" id="barcode-input"
+                                                    placeholder="Digite ou escaneie o código" autofocus>
+                                            </div>
+
+                                            <div id="scanned-product-info" class="scanned-product-info"></div>
+
+                                            <div class="cart-section">
+                                                <h3>🛒 Carrinho</h3>
+                                                <div id="cart-items" class="cart-items"></div>
+                                                <div class="cart-total">
+                                                    <span>Total:</span>
+                                                    <span id="cart-total" class="total-value">R$ 0,00</span>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div class="caixa-right">
+                                            <h3>💳 Pagamento</h3>
+                                            <div class="payment-methods">
+                                                <button class="payment-btn active" data-method="dinheiro">💵
+                                                    Dinheiro</button>
+                                                <button class="payment-btn" data-method="cartao">💳 Cartão</button>
+                                                <button class="payment-btn" data-method="pix">📱 PIX</button>
+                                            </div>
+                                            <input type="hidden" id="payment-method" value="dinheiro">
+
+                                            <div class="action-buttons">
+                                                <button id="finalize-sale" class="btn-success">✓ Finalizar
+                                                    Venda</button>
+                                                <button id="clear-cart" class="btn-danger">✕ Limpar</button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Products Tab -->
+                                <div id="products-tab" class="tab-content">
+                                    <div class="tab-header">
+                                        <h2>📦 Produtos</h2>
+                                        <button id="add-product-btn" class="btn-primary">+ Novo Produto</button>
+                                    </div>
+                                    <div class="table-container">
+                                        <table class="data-table">
+                                            <thead>
+                                                <tr>
+                                                    <th>Ícone</th>
+                                                    <th>Código</th>
+                                                    <th>Nome</th>
+                                                    <th>Categoria</th>
+                                                    <th>Preço</th>
+                                                    <th>Estoque</th>
+                                                    <th>Ações</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody id="products-table-body"></tbody>
+                                        </table>
+                                    </div>
+                                </div>
+
+                                <!-- Sales Tab -->
+                                <div id="sales-tab" class="tab-content">
+                                    <h2>📈 Histórico de Vendas</h2>
+                                    <div class="table-container">
+                                        <table class="data-table">
+                                            <thead>
+                                                <tr>
+                                                    <th>ID</th>
+                                                    <th>Data</th>
+                                                    <th>Itens</th>
+                                                    <th>Pagamento</th>
+                                                    <th>Total</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody id="sales-table-body"></tbody>
+                                        </table>
+                                    </div>
+                                </div>
+
+                                <!-- Admin Tab -->
+                                <div id="admin-tab" class="tab-content">
+                                    <h2>⚙️ Administração</h2>
+                                    <div class="admin-section">
+                                        <h3>👥 Usuários Cadastrados</h3>
+                                        <div class="table-container">
+                                            <table class="data-table">
+                                                <thead>
+                                                    <tr>
+                                                        <th>ID</th>
+                                                        <th>Nome</th>
+                                                        <th>Email</th>
+                                                        <th>Tipo</th>
+                                                        <th>Cadastro</th>
+                                                        <th>Status Assinatura</th>
+                                                        <th>Ações</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody id="admin-users-table"></tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+                                </div>
+                            </main>
+                        </div>
+
+                        <!-- Modal de Produto -->
+                        <div id="product-modal" class="modal">
+                            <div class="modal-content">
+                                <h2 id="modal-title">Novo Produto</h2>
+                                <form id="product-form">
+                                    <input type="hidden" id="product-id">
+
+                                    <div class="form-group">
+                                        <label>Código de Barras</label>
+                                        <input type="text" id="product-barcode" required>
+                                    </div>
+
+                                    <div class="form-group">
+                                        <label>Nome do Produto</label>
+                                        <input type="text" id="product-name" required>
+                                    </div>
+
+                                    <div class="form-group">
+                                        <label>Categoria</label>
+                                        <input type="text" id="product-category" required>
+                                    </div>
+
+                                    <div class="form-group">
+                                        <label>Preço (R$)</label>
+                                        <input type="number" id="product-price" step="0.01" required>
+                                    </div>
+
+                                    <div class="form-group">
+                                        <label>Estoque</label>
+                                        <input type="number" id="product-stock" required>
+                                    </div>
+
+                                    <div class="form-group">
+                                        <label>Ícone (Emoji)</label>
+                                        <input type="text" id="product-icon" placeholder="🛒" maxlength="2">
+                                    </div>
+
+                                    <div class="modal-actions">
+                                        <button type="submit" class="btn-primary">Salvar</button>
+                                        <button type="button" class="btn-secondary"
+                                            onclick="closeProductModal()">Cancelar</button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+
+                        <script src="/app.js"></script>
+</body>
+
+</html>

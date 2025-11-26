@@ -1,0 +1,13 @@
+﻿<!-- Adicionar ao rodapé da tela de login -->
+<div class="auth-footer">
+    <button class="btn-secondary" style="width: 100%; display: flex; align-items: center; justify-content: center; gap: 0.5rem;" onclick="showClientLogin()">
+         Clientes
+    </button>
+    <button class="btn-secondary" style="width: 100%; display: flex; align-items: center; justify-content: center; gap: 0.5rem;" onclick="window.open('https://play.google.com/store', '_blank')">
+         Baixar App
+    </button>
+    <div id="server-status" class="server-status">
+        <span class="status-dot"></span>
+        <span class="status-text">Verificando servidor...</span>
+    </div>
+</div>

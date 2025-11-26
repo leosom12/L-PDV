@@ -1,0 +1,490 @@
+﻿<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#1e293b">
+    <meta name="description" content="Sistema PDV para Supermercado">
+    <title>L-PDV - Sistema de Ponto de Venda</title>
+
+    <!-- Phosphor Icons -->
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+
+    <!-- PWA -->
+    <link rel="manifest" href="/manifest.json">
+    <link rel="icon" type="image/png" href="/icon-192.png">
+    <link rel="apple-touch-icon" href="/icon-512.png">
+    <link rel="stylesheet" href="/styles.css">
+</head>
+
+<body>
+    <!-- ========== TELA DE LOGIN/REGISTRO (EMPRESAS) ========== -->
+    <div id="auth-screen" class="screen">
+        <div class="auth-container">
+            <div class="auth-header">
+                <h1><i class="ph ph-shopping-cart"></i> L-PDV</h1>
+                <p>Sistema de Ponto de Venda</p>
+            </div>
+
+            <!-- Formulário de Login -->
+            <div id="login-form" class="auth-form">
+                <h2>Entrar</h2>
+                <form onsubmit="login(event)">
+                    <div class="form-group">
+                        <label><i class="ph ph-envelope"></i> Email</label>
+                        <input type="email" id="login-email" required placeholder="seu@email.com">
+                    </div>
+                    <div class="form-group">
+                        <label><i class="ph ph-lock-key"></i> Senha</label>
+                        <input type="password" id="login-password" required placeholder="••••••••">
+                    </div>
+                    <button type="submit" class="btn-primary">Entrar</button>
+                </form>
+                <p class="auth-switch">
+                    Não tem conta? <a href="#" onclick="showRegister(); return false;">Cadastre-se</a>
+                </p>
+            </div>
+
+            <!-- Formulário de Registro -->
+            <div id="register-form" class="auth-form" style="display: none;">
+                <h2>Criar Conta</h2>
+                <p class="auth-subtitle">Exclusivo para Pessoa Física (CPF)</p>
+                <form onsubmit="register(event)">
+                    <div class="form-group">
+                        <label><i class="ph ph-user"></i> Nome Completo</label>
+                        <input type="text" id="register-username" required placeholder="Seu Nome">
+                    </div>
+                    <div class="form-group">
+                        <label><i class="ph ph-identification-card"></i> CPF</label>
+                        <input type="text" id="register-cpf" required placeholder="000.000.000-00" maxlength="14"
+                            oninput="maskCPF(this)">
+                    </div>
+                    <div class="form-group">
+                        <label><i class="ph ph-envelope"></i> Email</label>
+                        <input type="email" id="register-email" required placeholder="seu@email.com">
+                    </div>
+                    <div class="form-group">
+                        <label><i class="ph ph-lock-key"></i> Senha</label>
+                        <input type="password" id="register-password" required placeholder="••••••••" minlength="6">
+                    </div>
+                    <button type="submit" class="btn-primary">Cadastrar</button>
+                </form>
+                <p class="auth-switch">
+                    Já tem conta? <a href="#" onclick="showLogin(); return false;">Fazer login</a>
+                </p>
+            </div>
+
+            <!-- Rodapé com Botões e Indicador de Servidor -->
+            <div class="auth-footer">
+                <!-- Botão Clientes -->
+                <button class="btn-secondary"
+                    style="width: 100%; display: flex; align-items: center; justify-content: center; gap: 0.5rem;"
+                    onclick="showClientLogin()">
+                    <i class="ph ph-users"></i> Clientes
+                </button>
+
+                <!-- Botão Baixar App -->
+                <button id="btn-install-pwa" class="btn-secondary"
+                    style="width: 100%; display: none; align-items: center; justify-content: center; gap: 0.5rem;"
+                    onclick="installPWA()">
+                    <i class="ph ph-download-simple"></i> Baixar App
+                </button>
+
+                <!-- Indicador de Servidor -->
+                <div id="server-status" class="server-status">
+                    <span class="status-dot"></span>
+                    <span class="status-text">Verificando servidor...</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ========== TELA DE LOGIN PARA CLIENTES ========== -->
+    <div id="client-login-screen" class="screen" style="display: none;">
+        <div class="auth-container">
+            <div class="auth-header">
+                <h1><i class="ph ph-users"></i> Área do Cliente</h1>
+                <p>Acesso exclusivo para clientes</p>
+            </div>
+
+            <!-- Formulário de Login do Cliente (apenas Gmail) -->
+            <div class="auth-form">
+                <h2>Login Cliente</h2>
+                <form onsubmit="clientLogin(event)">
+                    <div class="form-group">
+                        <label><i class="ph ph-envelope"></i> Gmail</label>
+                        <input type="email" id="client-email" required placeholder="seuemail@gmail.com">
+                    </div>
+                    <button type="submit" class="btn-primary">Entrar</button>
+                </form>
+                <p class="auth-switch">
+                    <a href="#" onclick="backToMainLogin(); return false;">← Voltar para login principal</a>
+                </p>
+            </div>
+
+            <!-- Indicador de Servidor -->
+            <div class="auth-footer">
+                <div id="client-server-status" class="server-status">
+                    <span class="status-dot"></span>
+                    <span class="status-text">Verificando servidor...</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ========== APLICAÇÃO PRINCIPAL ========== -->
+    <div id="app-screen" class="screen" style="display: none;">
+        <!-- Header -->
+        <header class="app-header">
+            <div class="header-left">
+                <h1><i class="ph ph-shopping-cart"></i> L-PDV</h1>
+            </div>
+            <div class="header-right">
+                <button onclick="logout()" class="btn-logout"><i class="ph ph-sign-out"></i> Sair</button>
+            </div>
+        </header>
+
+        <main class="app-content">
+            <!-- Dashboard Tab -->
+            <div id="dashboard-tab" class="tab-content active">
+                <h2><i class="ph ph-chart-bar"></i> Visão Geral</h2>
+
+                <!-- Alerta de Boletos Vencendo -->
+                <div id="boletos-alert" class="dashboard-card danger" style="display: none; margin-bottom: 1.5rem;">
+                    <div class="card-icon"><i class="ph ph-warning-circle"></i></div>
+                    <div class="card-info">
+                        <h3>Boletos Vencendo</h3>
+                        <p id="boletos-vencendo-count" class="card-value">0</p>
+                        <small style="color: var(--text-secondary);">Próximos 7 dias</small>
+                    </div>
+                </div>
+
+                <div class="dashboard-grid">
+                    <div class="dashboard-card">
+                        <div class="card-icon"><i class="ph ph-package"></i></div>
+                        <div class="card-info">
+                            <h3>Total de Produtos</h3>
+                            <p id="total-products" class="card-value">0</p>
+                        </div>
+                    </div>
+                    <div class="dashboard-card warning">
+                        <div class="card-icon"><i class="ph ph-warning"></i></div>
+                        <div class="card-info">
+                            <h3>Estoque Baixo</h3>
+                            <p id="low-stock-products" class="card-value">0</p>
+                        </div>
+                    </div>
+                    <div class="dashboard-card danger">
+                        <div class="card-icon"><i class="ph ph-prohibit"></i></div>
+                        <div class="card-info">
+                            <h3>Sem Estoque</h3>
+                            <p id="out-of-stock-products" class="card-value">0</p>
+                        </div>
+                    </div>
+                    <div class="dashboard-card">
+                        <div class="card-icon"><i class="ph ph-trend-up"></i></div>
+                        <div class="card-info">
+                            <h3>Total de Vendas</h3>
+                            <p id="total-sales-count" class="card-value">0</p>
+                        </div>
+                    </div>
+                    <div class="dashboard-card success">
+                        <div class="card-icon"><i class="ph ph-money"></i></div>
+                        <div class="card-info">
+                            <h3>Valor Total</h3>
+                            <p id="total-sales-amount" class="card-value">R$ 0,00</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Caixa Tab -->
+            <div id="caixa-tab" class="tab-content">
+                <h2><i class="ph ph-currency-dollar"></i> Caixa - PDV</h2>
+                <div class="caixa-container">
+                    <div class="caixa-left">
+                        <div class="barcode-scanner">
+                            <label><i class="ph ph-magnifying-glass"></i> Código de Barras</label>
+                            <input type="text" id="barcode-input" placeholder="Digite ou escaneie o código" autofocus>
+                        </div>
+
+                        <div id="scanned-product-info" class="scanned-product-info"></div>
+
+                        <div class="cart-section">
+                            <h3><i class="ph ph-shopping-cart"></i> Carrinho</h3>
+                            <div id="cart-items" class="cart-items"></div>
+                            <div class="cart-total">
+                                <span>Total:</span>
+                                <span id="cart-total" class="total-value">R$ 0,00</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="caixa-right">
+                        <h3><i class="ph ph-credit-card"></i> Pagamento</h3>
+                        <div class="payment-methods">
+                            <button class="payment-btn active" data-method="dinheiro"><i class="ph ph-money"></i>
+                                Dinheiro</button>
+                            <button class="payment-btn" data-method="cartao"><i class="ph ph-credit-card"></i>
+                                Cartão</button>
+                            <button class="payment-btn" data-method="pix"><i class="ph ph-device-mobile-camera"></i>
+                                PIX</button>
+                        </div>
+                        <input type="hidden" id="payment-method" value="dinheiro">
+
+                        <div class="action-buttons">
+                            <button id="finalize-sale" class="btn-success"><i class="ph ph-check-circle"></i> Finalizar
+                                Venda</button>
+                            <button id="clear-cart" class="btn-danger"><i class="ph ph-x"></i> Limpar</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Products Tab -->
+            <div id="products-tab" class="tab-content">
+                <div class="tab-header">
+                    <h2><i class="ph ph-package"></i> Produtos</h2>
+                    <button id="add-product-btn" class="btn-primary">+ Novo Produto</button>
+                </div>
+                <div class="table-container">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Ícone</th>
+                                <th>Código</th>
+                                <th>Nome</th>
+                                <th>Categoria</th>
+                                <th>Preço</th>
+                                <th>Estoque</th>
+                                <th>Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody id="products-table-body"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Estoque Tab -->
+            <div id="estoque-tab" class="tab-content">
+                <h2><i class="ph ph-warehouse"></i> Controle de Estoque</h2>
+
+                <!-- Cards de Resumo -->
+                <div class="dashboard-grid" style="margin-bottom: 2rem;">
+                    <div class="dashboard-card">
+                        <div class="card-icon"><i class="ph ph-package"></i></div>
+                        <div class="card-info">
+                            <h3>Total em Estoque</h3>
+                            <p id="total-stock-items" class="card-value">0</p>
+                        </div>
+                    </div>
+                    <div class="dashboard-card warning">
+                        <div class="card-icon"><i class="ph ph-warning"></i></div>
+                        <div class="card-info">
+                            <h3>Estoque Baixo</h3>
+                            <p id="low-stock-count" class="card-value">0</p>
+                        </div>
+                    </div>
+                    <div class="dashboard-card danger">
+                        <div class="card-icon"><i class="ph ph-prohibit"></i></div>
+                        <div class="card-info">
+                            <h3>Sem Estoque</h3>
+                            <p id="zero-stock-count" class="card-value">0</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Botões de Ação -->
+                <div class="tab-header">
+                    <h3><i class="ph ph-arrows-clockwise"></i> Movimentações de Estoque</h3>
+                    <button id="add-stock-movement-btn" class="btn-primary">+ Nova Movimentação</button>
+                </div>
+
+                <!-- Tabela de Movimentações -->
+                <div class="table-container">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Data</th>
+                                <th>Produto</th>
+                                <th>Tipo</th>
+                                <th>Quantidade</th>
+                                <th>Estoque Anterior</th>
+                                <th>Estoque Atual</th>
+                                <th>Motivo</th>
+                            </tr>
+                        </thead>
+                        <tbody id="stock-movements-table-body"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Sales Tab -->
+            <div id="sales-tab" class="tab-content">
+                <h2><i class="ph ph-trend-up"></i> Histórico de Vendas</h2>
+                <div class="table-container">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Data</th>
+                                <th>Itens</th>
+                                <th>Pagamento</th>
+                                <th>Total</th>
+                            </tr>
+                        </thead>
+                        <tbody id="sales-table-body"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Boletos Tab -->
+            <div id="boletos-tab" class="tab-content">
+                <div class="tab-header">
+                    <h2><i class="ph ph-barcode"></i> Gerenciamento de Boletos</h2>
+                    <button id="add-boleto-btn" class="btn-primary">+ Novo Boleto</button>
+                </div>
+                <div class="table-container">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Descrição</th>
+                                <th>Valor</th>
+                                <th>Vencimento</th>
+                                <th>Status</th>
+                                <th>Dias Restantes</th>
+                                <th>Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody id="boletos-table-body"></tbody>
+                    </table>
+                </div>
+            </div>
+        </main>
+
+        <nav class="app-nav">
+            <button class="nav-tab active" data-tab="dashboard"><i class="ph ph-chart-bar"></i> Visão Geral</button>
+            <button class="nav-tab" data-tab="caixa"><i class="ph ph-currency-dollar"></i> Caixa</button>
+            <button class="nav-tab" data-tab="products"><i class="ph ph-package"></i> Produtos</button>
+            <button class="nav-tab" data-tab="estoque"><i class="ph ph-warehouse"></i> Estoque</button>
+            <button class="nav-tab" data-tab="sales"><i class="ph ph-trend-up"></i> Vendas</button>
+            <button class="nav-tab" data-tab="boletos"><i class="ph ph-barcode"></i> Boletos</button>
+            <button class="nav-tab" id="admin-nav-tab" data-tab="admin" style="display: none;"><i
+                    class="ph ph-users"></i> Admin</button>
+        </nav>
+    </div>
+
+    <!-- Modal de Produto -->
+    <div id="product-modal" class="modal">
+        <div class="modal-content">
+            <h2 id="modal-title">Novo Produto</h2>
+            <form id="product-form">
+                <input type="hidden" id="product-id">
+                <div class="form-group">
+                    <label>Código de Barras</label>
+                    <input type="text" id="product-barcode" required>
+                </div>
+                <div class="form-group">
+                    <label>Nome do Produto</label>
+                    <input type="text" id="product-name" required>
+                </div>
+                <div class="form-group">
+                    <label>Categoria</label>
+                    <input type="text" id="product-category" required>
+                </div>
+                <div class="form-group">
+                    <label>Preço (R$)</label>
+                    <input type="number" id="product-price" step="0.01" required>
+                </div>
+                <div class="form-group">
+                    <label>Estoque</label>
+                    <input type="number" id="product-stock" required>
+                </div>
+                <div class="form-group">
+                    <label>Ícone (emoji)</label>
+                    <input type="text" id="product-icon" placeholder="📦">
+                </div>
+                <div class="modal-actions">
+                    <button type="submit" class="btn-primary">Salvar</button>
+                    <button type="button" onclick="closeProductModal()" class="btn-secondary">Cancelar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal de Movimentação de Estoque -->
+    <div id="stock-movement-modal" class="modal">
+        <div class="modal-content">
+            <h2 id="stock-movement-modal-title">Nova Movimentação de Estoque</h2>
+            <form id="stock-movement-form">
+                <div class="form-group">
+                    <label><i class="ph ph-package"></i> Produto</label>
+                    <select id="stock-product-id" required>
+                        <option value="">Selecione um produto...</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label><i class="ph ph-swap"></i> Tipo de Movimentação</label>
+                    <select id="stock-movement-type" required>
+                        <option value="entrada">➕ Entrada (Adicionar)</option>
+                        <option value="saida">➖ Saída (Remover)</option>
+                        <option value="ajuste">🔧 Ajuste Manual</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label><i class="ph ph-hash"></i> Quantidade</label>
+                    <input type="number" id="stock-quantity" required min="1" placeholder="0">
+                </div>
+                <div class="form-group">
+                    <label><i class="ph ph-note"></i> Motivo</label>
+                    <input type="text" id="stock-reason" required
+                        placeholder="Ex: Compra de fornecedor, Perda, Correção...">
+                </div>
+                <div class="modal-actions">
+                    <button type="submit" class="btn-primary">Salvar</button>
+                    <button type="button" onclick="closeStockMovementModal()" class="btn-secondary">Cancelar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal de Boleto -->
+    <div id="boleto-modal" class="modal">
+        <div class="modal-content">
+            <h2 id="boleto-modal-title">Novo Boleto</h2>
+            <form id="boleto-form">
+                <input type="hidden" id="boleto-id">
+                <div class="form-group">
+                    <label><i class="ph ph-file-text"></i> Descrição</label>
+                    <input type="text" id="boleto-description" required placeholder="Ex: Conta de Luz, Aluguel...">
+                </div>
+                <div class="form-group">
+                    <label><i class="ph ph-currency-dollar"></i> Valor (R$)</label>
+                    <input type="number" id="boleto-value" step="0.01" required placeholder="0.00">
+                </div>
+                <div class="form-group">
+                    <label><i class="ph ph-calendar"></i> Data de Vencimento</label>
+                    <input type="date" id="boleto-duedate" required>
+                </div>
+                <div class="form-group">
+                    <label><i class="ph ph-info"></i> Status</label>
+                    <select id="boleto-status">
+                        <option value="pendente">Pendente</option>
+                        <option value="pago">Pago</option>
+                        <option value="vencido">Vencido</option>
+                    </select>
+                </div>
+                <div class="modal-actions">
+                    <button type="submit" class="btn-primary">Salvar</button>
+                    <button type="button" onclick="closeBoletoModal()" class="btn-secondary">Cancelar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="/login-fix.js"></script>
+    <script src="/app.js"></script>
+</body>
+
+</html>

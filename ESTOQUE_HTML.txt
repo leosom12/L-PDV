@@ -1,0 +1,88 @@
+<!-- Estoque Tab - ADICIONAR APÓS A ABA DE PRODUTOS -->
+<div id="estoque-tab" class="tab-content">
+    <h2><i class="ph ph-warehouse"></i> Controle de Estoque</h2>
+    
+    <!-- Cards de Resumo -->
+    <div class="dashboard-grid" style="margin-bottom: 2rem;">
+        <div class="dashboard-card">
+            <div class="card-icon"><i class="ph ph-package"></i></div>
+            <div class="card-info">
+                <h3>Total em Estoque</h3>
+                <p id="total-stock-items" class="card-value">0</p>
+            </div>
+        </div>
+        <div class="dashboard-card warning">
+            <div class="card-icon"><i class="ph ph-warning"></i></div>
+            <div class="card-info">
+                <h3>Estoque Baixo</h3>
+                <p id="low-stock-count" class="card-value">0</p>
+            </div>
+        </div>
+        <div class="dashboard-card danger">
+            <div class="card-icon"><i class="ph ph-prohibit"></i></div>
+            <div class="card-info">
+                <h3>Sem Estoque</h3>
+                <p id="zero-stock-count" class="card-value">0</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Botões de Ação -->
+    <div class="tab-header">
+        <h3><i class="ph ph-arrows-clockwise"></i> Movimentações de Estoque</h3>
+        <button id="add-stock-movement-btn" class="btn-primary">+ Nova Movimentação</button>
+    </div>
+
+    <!-- Tabela de Movimentações -->
+    <div class="table-container">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Data</th>
+                    <th>Produto</th>
+                    <th>Tipo</th>
+                    <th>Quantidade</th>
+                    <th>Estoque Anterior</th>
+                    <th>Estoque Atual</th>
+                    <th>Motivo</th>
+                </tr>
+            </thead>
+            <tbody id="stock-movements-table-body"></tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Modal de Movimentação de Estoque - ADICIONAR APÓS O MODAL DE BOLETO -->
+<div id="stock-movement-modal" class="modal">
+    <div class="modal-content">
+        <h2 id="stock-movement-modal-title">Nova Movimentação de Estoque</h2>
+        <form id="stock-movement-form">
+            <div class="form-group">
+                <label><i class="ph ph-package"></i> Produto</label>
+                <select id="stock-product-id" required>
+                    <option value="">Selecione um produto...</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label><i class="ph ph-swap"></i> Tipo de Movimentação</label>
+                <select id="stock-movement-type" required>
+                    <option value="entrada">➕ Entrada (Adicionar)</option>
+                    <option value="saida">➖ Saída (Remover)</option>
+                    <option value="ajuste">🔧 Ajuste Manual</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label><i class="ph ph-hash"></i> Quantidade</label>
+                <input type="number" id="stock-quantity" required min="1" placeholder="0">
+            </div>
+            <div class="form-group">
+                <label><i class="ph ph-note"></i> Motivo</label>
+                <input type="text" id="stock-reason" required placeholder="Ex: Compra de fornecedor, Perda, Correção...">
+            </div>
+            <div class="modal-actions">
+                <button type="submit" class="btn-primary">Salvar</button>
+                <button type="button" onclick="closeStockMovementModal()" class="btn-secondary">Cancelar</button>
+            </div>
+        </form>
+    </div>
+</div>

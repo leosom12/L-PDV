@@ -1,0 +1,161 @@
+// ==================== CONTROLE DE ESTOQUE ====================
+// ADICIONAR NO FINAL DO ARQUIVO app.js
+
+// Carregar resumo de estoque
+function loadStockSummary() {
+    const token = localStorage.getItem('authToken');
+    
+    fetch('/api/products', {
+        headers: { 'Authorization': `Bearer ${token}` }
+    })
+        .then(response => response.json())
+        .then(products => {
+            const totalItems = products.reduce((sum, p) => sum + p.stock, 0);
+            const lowStock = products.filter(p => p.stock > 0 && p.stock <= 5).length;
+            const zeroStock = products.filter(p => p.stock === 0).length;
+            
+            document.getElementById('total-stock-items').textContent = totalItems;
+            document.getElementById('low-stock-count').textContent = lowStock;
+            document.getElementById('zero-stock-count').textContent = zeroStock;
+        })
+        .catch(err => console.error('Erro ao carregar resumo de estoque:', err));
+}
+
+// Carregar movimentações de estoque
+function loadStockMovements() {
+    const token = localStorage.getItem('authToken');
+    const tbody = document.getElementById('stock-movements-table-body');
+    if (!tbody) return;
+
+    fetch('/api/stock-movements', {
+        headers: { 'Authorization': `Bearer ${token}` }
+    })
+        .then(response => response.json())
+        .then(movements => {
+            tbody.innerHTML = '';
+            
+            if (movements.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="7" style="text-align: center; color: var(--text-secondary);">Nenhuma movimentação registrada</td></tr>';
+                return;
+            }
+
+            movements.forEach(mov => {
+                const tr = document.createElement('tr');
+                const date = new Date(mov.createdAt);
+                
+                let typeBadge = '';
+                if (mov.type === 'entrada') {
+                    typeBadge = '<span class="status-badge active">➕ Entrada</span>';
+                } else if (mov.type === 'saida') {
+                    typeBadge = '<span class="status-badge inactive">➖ Saída</span>';
+                } else {
+                    typeBadge = '<span class="status-badge warning">🔧 Ajuste</span>';
+                }
+
+                tr.innerHTML = `
+                    <td>${date.toLocaleDateString('pt-BR')} ${date.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}</td>
+                    <td>${mov.productName}</td>
+                    <td>${typeBadge}</td>
+                    <td><strong>${mov.quantity}</strong></td>
+                    <td>${mov.previousStock}</td>
+                    <td><strong>${mov.newStock}</strong></td>
+                    <td>${mov.reason}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+
+            loadStockSummary();
+        })
+        .catch(err => console.error('Erro ao carregar movimentações:', err));
+}
+
+// Abrir modal de movimentação
+function openStockMovementModal() {
+    const token = localStorage.getItem('authToken');
+    
+    // Carregar produtos no select
+    fetch('/api/products', {
+        headers: { 'Authorization': `Bearer ${token}` }
+    })
+        .then(response => response.json())
+        .then(products => {
+            const select = document.getElementById('stock-product-id');
+            select.innerHTML = '<option value="">Selecione um produto...</option>';
+            
+            products.forEach(product => {
+                const option = document.createElement('option');
+                option.value = product.id;
+                option.textContent = `${product.name} (Estoque atual: ${product.stock})`;
+                option.dataset.currentStock = product.stock;
+                select.appendChild(option);
+            });
+        });
+
+    document.getElementById('stock-movement-form').reset();
+    document.getElementById('stock-movement-modal').style.display = 'flex';
+}
+
+// Fechar modal de movimentação
+function closeStockMovementModal() {
+    document.getElementById('stock-movement-modal').style.display = 'none';
+}
+
+// Salvar movimentação de estoque
+document.getElementById('stock-movement-form')?.addEventListener('submit', function (e) {
+    e.preventDefault();
+    
+    const token = localStorage.getItem('authToken');
+    const productId = document.getElementById('stock-product-id').value;
+    const type = document.getElementById('stock-movement-type').value;
+    const quantity = parseInt(document.getElementById('stock-quantity').value);
+    const reason = document.getElementById('stock-reason').value;
+
+    if (!productId) {
+        alert('Selecione um produto');
+        return;
+    }
+
+    const movement = {
+        productId: parseInt(productId),
+        type: type,
+        quantity: quantity,
+        reason: reason
+    };
+
+    fetch('/api/stock-movements', {
+        method: 'POST',
+        headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(movement)
+    })
+        .then(response => response.json())
+        .then(data => {
+            if (data.message || data.id) {
+                alert('✓ Movimentação registrada com sucesso!');
+                closeStockMovementModal();
+                loadStockMovements();
+                loadProducts(); // Atualizar lista de produtos
+            } else {
+                alert(data.error || 'Erro ao registrar movimentação');
+            }
+        })
+        .catch(err => {
+            console.error('Erro:', err);
+            alert('Erro ao registrar movimentação');
+        });
+});
+
+// Event listener para botão de nova movimentação
+document.getElementById('add-stock-movement-btn')?.addEventListener('click', openStockMovementModal);
+
+// Atualizar switchTab para carregar estoque
+const originalSwitchTabEstoque = switchTab;
+switchTab = function(tabName) {
+    originalSwitchTabEstoque(tabName);
+    if (tabName === 'estoque') {
+        loadStockMovements();
+        loadStockSummary();
+    }
+};

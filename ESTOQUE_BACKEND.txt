@@ -1,0 +1,90 @@
+// ==================== STOCK MOVEMENTS ROUTES ====================
+// ADICIONAR NO server.js ANTES DAS ROTAS DE BOLETOS (linha ~420)
+
+// Primeiro, adicionar a tabela no getUserDb() function (linha ~115):
+// Adicionar dentro do db.serialize(() => { ... }):
+
+        // Stock Movements Table
+        db.run(`CREATE TABLE IF NOT EXISTS stock_movements (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            productId INTEGER,
+            productName TEXT,
+            type TEXT,
+            quantity INTEGER,
+            previousStock INTEGER,
+            newStock INTEGER,
+            reason TEXT,
+            createdAt TEXT,
+            FOREIGN KEY(productId) REFERENCES products(id)
+        )`);
+
+// Depois, adicionar as rotas da API:
+
+// Listar movimentações de estoque
+app.get('/api/stock-movements', authenticateToken, (req, res) => {
+    const db = getUserDb(req.user.id);
+    db.all(`SELECT * FROM stock_movements ORDER BY createdAt DESC LIMIT 100`, (err, rows) => {
+        if (err) {
+            db.close();
+            return res.status(500).json({ error: err.message });
+        }
+        res.json(rows || []);
+        db.close();
+    });
+});
+
+// Criar nova movimentação de estoque
+app.post('/api/stock-movements', authenticateToken, (req, res) => {
+    const { productId, type, quantity, reason } = req.body;
+    const db = getUserDb(req.user.id);
+
+    // Buscar produto atual
+    db.get(`SELECT * FROM products WHERE id = ?`, [productId], (err, product) => {
+        if (err || !product) {
+            db.close();
+            return res.status(404).json({ error: 'Produto não encontrado' });
+        }
+
+        const previousStock = product.stock;
+        let newStock = previousStock;
+
+        // Calcular novo estoque baseado no tipo
+        if (type === 'entrada') {
+            newStock = previousStock + quantity;
+        } else if (type === 'saida') {
+            newStock = previousStock - quantity;
+            if (newStock < 0) {
+                db.close();
+                return res.status(400).json({ error: 'Estoque insuficiente' });
+            }
+        } else if (type === 'ajuste') {
+            newStock = quantity; // Ajuste define o valor exato
+        }
+
+        // Atualizar estoque do produto
+        db.run(`UPDATE products SET stock = ? WHERE id = ?`, [newStock, productId], (err) => {
+            if (err) {
+                db.close();
+                return res.status(500).json({ error: err.message });
+            }
+
+            // Registrar movimentação
+            db.run(`INSERT INTO stock_movements(productId, productName, type, quantity, previousStock, newStock, reason, createdAt) 
+                    VALUES(?, ?, ?, ?, ?, ?, ?, ?)`,
+                [productId, product.name, type, quantity, previousStock, newStock, reason, new Date().toISOString()],
+                function (err) {
+                    if (err) {
+                        db.close();
+                        return res.status(500).json({ error: err.message });
+                    }
+                    res.json({ 
+                        id: this.lastID, 
+                        message: 'Movimentação registrada com sucesso',
+                        newStock: newStock
+                    });
+                    db.close();
+                }
+            );
+        });
+    });
+});

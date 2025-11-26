@@ -1,0 +1,130 @@
+# 📋 GUIA DE INSTALAÇÃO - ABA DE CONTROLE DE ESTOQUE
+
+## Passo 1: Atualizar o HTML (index.html)
+
+### 1.1 Adicionar botão na navegação (linha ~167)
+Localizar a seção `<nav class="app-nav">` e adicionar o botão de Estoque:
+
+```html
+<button class="nav-tab" data-tab="estoque"><i class="ph ph-warehouse"></i> Estoque</button>
+```
+
+A navegação completa deve ficar assim:
+```html
+<nav class="app-nav">
+    <button class="nav-tab active" data-tab="dashboard"><i class="ph ph-chart-bar"></i> Visão Geral</button>
+    <button class="nav-tab" data-tab="caixa"><i class="ph ph-currency-dollar"></i> Caixa</button>
+    <button class="nav-tab" data-tab="products"><i class="ph ph-package"></i> Produtos</button>
+    <button class="nav-tab" data-tab="estoque"><i class="ph ph-warehouse"></i> Estoque</button>
+    <button class="nav-tab" data-tab="sales"><i class="ph ph-trend-up"></i> Vendas</button>
+    <button class="nav-tab" data-tab="boletos"><i class="ph ph-barcode"></i> Boletos</button>
+</nav>
+```
+
+### 1.2 Adicionar conteúdo da aba
+Copiar TODO o conteúdo do arquivo `ESTOQUE_HTML.txt` e colar APÓS a aba de Produtos (products-tab) e ANTES da aba de Vendas (sales-tab).
+
+---
+
+## Passo 2: Atualizar o JavaScript (app.js)
+
+### 2.1 Adicionar funções de estoque
+Copiar TODO o conteúdo do arquivo `ESTOQUE_JAVASCRIPT.txt` e colar NO FINAL do arquivo `app.js`, após as funções de boletos.
+
+---
+
+## Passo 3: Atualizar o Backend (server.js)
+
+### 3.1 Adicionar tabela no banco de dados
+Localizar a função `getUserDb(userId)` (linha ~54) e dentro do `db.serialize(() => {`, APÓS a tabela de boletos, adicionar:
+
+```javascript
+// Stock Movements Table
+db.run(`CREATE TABLE IF NOT EXISTS stock_movements (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    productId INTEGER,
+    productName TEXT,
+    type TEXT,
+    quantity INTEGER,
+    previousStock INTEGER,
+    newStock INTEGER,
+    reason TEXT,
+    createdAt TEXT,
+    FOREIGN KEY(productId) REFERENCES products(id)
+)`);
+```
+
+### 3.2 Adicionar rotas da API
+Copiar as rotas do arquivo `ESTOQUE_BACKEND.txt` e colar ANTES das rotas de boletos (linha ~420), logo após as rotas de debtors.
+
+---
+
+## Passo 4: Reiniciar o Servidor
+
+1. Parar o servidor atual (Ctrl+C no terminal)
+2. Iniciar novamente: `node server.js`
+3. Acessar http://localhost:3000
+4. Fazer login
+5. Clicar na aba "Estoque"
+
+---
+
+## ✅ Verificação
+
+Após a instalação, você deve ter:
+
+1. ✅ Aba "Estoque" visível na navegação
+2. ✅ Cards mostrando resumo do estoque
+3. ✅ Botão "+ Nova Movimentação"
+4. ✅ Tabela de movimentações vazia (inicialmente)
+5. ✅ Modal para registrar movimentações funcionando
+
+---
+
+## 🎯 Funcionalidades Implementadas
+
+- ✅ **Entrada de Estoque**: Adicionar produtos ao estoque
+- ✅ **Saída de Estoque**: Remover produtos do estoque
+- ✅ **Ajuste Manual**: Corrigir quantidade exata
+- ✅ **Histórico Completo**: Todas as movimentações registradas
+- ✅ **Resumo Visual**: Cards com totais e alertas
+- ✅ **Rastreabilidade**: Data, hora, motivo de cada movimentação
+
+---
+
+## 📊 Exemplo de Uso
+
+1. Clique em "+ Nova Movimentação"
+2. Selecione um produto
+3. Escolha o tipo (Entrada/Saída/Ajuste)
+4. Informe a quantidade
+5. Descreva o motivo (ex: "Compra de fornecedor", "Perda", "Correção de inventário")
+6. Clique em "Salvar"
+
+O sistema automaticamente:
+- Atualiza o estoque do produto
+- Registra a movimentação com data/hora
+- Mostra o estoque anterior e o novo
+- Atualiza os cards de resumo
+
+---
+
+## 🚨 Observações Importantes
+
+1. **Saídas**: O sistema não permite saídas maiores que o estoque disponível
+2. **Ajustes**: O tipo "Ajuste" define o valor EXATO do estoque (não adiciona/remove)
+3. **Histórico**: Limitado às últimas 100 movimentações para performance
+4. **Sincronização**: As vendas pelo PDV também geram movimentações automáticas
+
+---
+
+## 📁 Arquivos Criados
+
+- `ESTOQUE_HTML.txt` - Código HTML da aba
+- `ESTOQUE_JAVASCRIPT.txt` - Funções JavaScript
+- `ESTOQUE_BACKEND.txt` - Rotas da API e tabela do banco
+- `ESTOQUE_INSTALACAO.txt` - Este guia
+
+---
+
+Boa implementação! 🚀

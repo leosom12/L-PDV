@@ -1,0 +1,33 @@
+{
+    "name": "supermarket-pos",
+    "version": "1.0.0",
+    "description": "Sistema PDV para Supermercado com PWA",
+    "main": "server.js",
+    "scripts": {
+        "start": "node server.js",
+        "dev": "node server.js",
+        "config:ngrok": ".\\configurar-token-ngrok.bat"
+    },
+    "keywords": [
+        "pdv",
+        "pos",
+        "supermarket",
+        "pwa"
+    ],
+    "author": "",
+    "license": "MIT",
+    "dependencies": {
+        "@ngrok/ngrok": "^1.6.0",
+        "axios": "^1.13.2",
+        "bcryptjs": "^2.4.3",
+        "cors": "^2.8.5",
+        "dotenv": "^17.2.3",
+        "express": "^4.18.2",
+        "jsonwebtoken": "^9.0.2",
+        "localtunnel": "^2.0.2",
+        "node-telegram-bot-api": "^0.64.0",
+        "nodemailer": "^7.0.10",
+        "qrcode": "^1.5.4",
+        "sqlite3": "^5.1.6"
+    }
+}
