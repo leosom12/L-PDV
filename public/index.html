@@ -39,6 +39,16 @@
                         <label><i class="ph ph-lock-key"></i> Senha</label>
                         <input type="password" id="login-password" required placeholder="••••••••">
                     </div>
+
+                    <!-- Botão Baixar App (Solicitado) -->
+                    <div class="form-group">
+                        <button type="button" id="btn-install-pwa" class="btn-secondary"
+                            style="width: 100%; display: flex; align-items: center; justify-content: center; gap: 0.5rem; margin-bottom: 1rem;"
+                            onclick="installPWA()">
+                            <i class="ph ph-download-simple"></i> Aplicativo
+                        </button>
+                    </div>
+
                     <button type="submit" class="btn-primary">Entrar</button>
                 </form>
                 <p class="auth-switch">
@@ -82,13 +92,6 @@
                     style="width: 100%; display: flex; align-items: center; justify-content: center; gap: 0.5rem;"
                     onclick="showClientLogin()">
                     <i class="ph ph-users"></i> Clientes
-                </button>
-
-                <!-- Botão Baixar App -->
-                <button id="btn-install-pwa" class="btn-secondary"
-                    style="width: 100%; display: none; align-items: center; justify-content: center; gap: 0.5rem;"
-                    onclick="installPWA()">
-                    <i class="ph ph-download-simple"></i> Baixar App
                 </button>
 
                 <!-- Indicador de Servidor -->
@@ -283,14 +286,14 @@
                         <div class="card-icon"><i class="ph ph-warning"></i></div>
                         <div class="card-info">
                             <h3>Estoque Baixo</h3>
-                            <p id="low-stock-count" class="card-value">0</p>
+                            <p id="low-stock-products" class="card-value">0</p>
                         </div>
                     </div>
                     <div class="dashboard-card danger">
                         <div class="card-icon"><i class="ph ph-prohibit"></i></div>
                         <div class="card-info">
                             <h3>Sem Estoque</h3>
-                            <p id="zero-stock-count" class="card-value">0</p>
+                            <p id="out-of-stock-products" class="card-value">0</p>
                         </div>
                     </div>
                 </div>
@@ -364,7 +367,8 @@
         </main>
 
         <nav class="app-nav">
-            <button class="nav-tab active" data-tab="dashboard"><i class="ph ph-chart-bar"></i> Visão Geral</button>
+            <button class="nav-tab active" data-tab="dashboard"><i class="ph ph-chart-bar"></i> Visão
+                Geral</button>
             <button class="nav-tab" data-tab="caixa"><i class="ph ph-currency-dollar"></i> Caixa</button>
             <button class="nav-tab" data-tab="products"><i class="ph ph-package"></i> Produtos</button>
             <button class="nav-tab" data-tab="estoque"><i class="ph ph-warehouse"></i> Estoque</button>
@@ -483,8 +487,8 @@
         </div>
     </div>
 
-    <script src="/login-fix.js"></script>
-    <script src="/app.js"></script>
+    <script src="/login-fix.js?v=20251126"></script>
+    <script src="/app.js?v=20251126"></script>
 </body>
 
 </html>

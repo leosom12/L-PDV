@@ -4,7 +4,7 @@ window.login = function (e) {
     const email = document.getElementById('login-email').value;
     const password = document.getElementById('login-password').value;
 
-    fetch('/api/login', {
+    fetch('/api/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password })
@@ -61,7 +61,7 @@ window.register = function (e) {
         return;
     }
 
-    fetch('/api/register', {
+    fetch('/api/auth/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ username, email, password, cpf })

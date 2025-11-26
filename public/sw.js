@@ -1,4 +1,4 @@
-const CACHE_NAME = 'l-pdv-v2';
+const CACHE_NAME = 'l-pdv-v3';
 const ASSETS_TO_CACHE = [
     '/',
     '/index.html',
